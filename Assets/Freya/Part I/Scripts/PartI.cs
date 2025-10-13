@@ -4,6 +4,9 @@ using UnityEngine;
 
 namespace Freya.Part_I.Scripts
 {
+    /// <summary>
+    /// Number lines and vectors
+    /// </summary>
     public class PartI : MonoBehaviour
     {
         [SerializeField] private Transform m_A, m_B;
