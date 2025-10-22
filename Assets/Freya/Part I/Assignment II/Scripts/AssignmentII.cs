@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Freya.Part_I.AssignmentII.Scripts
+namespace Freya.Part_I.Assignment_II.Scripts
 {
     /// <summary>
     /// Bouncing laser

@@ -1,7 +1,7 @@
 using Attributes;
 using UnityEngine;
 
-namespace Freya.Part_I.AssignmentIII.Scripts
+namespace Freya.Part_I.Assignment_III.Scripts
 {
     /// <summary>
     /// Vector transformation

@@ -78,7 +78,7 @@ namespace Freya.Part_II.Scripts
             {
                 Vector3 point = hitInfo.point;
 
-                Gizmos.color = Color.blue;
+                Gizmos.color = Color.white;
                 Gizmos.DrawLine(ray.origin, point);
 
                 Vector3 yAxis = hitInfo.normal;
