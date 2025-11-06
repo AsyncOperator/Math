@@ -19,6 +19,16 @@ namespace Freya.Part_II.Assignment_I.Scripts
             m_DetectionHeight = Mathf.Max(m_DetectionHeight, 0.5f);
         }
 
+        private void OnEnable()
+        {
+            Camera.onPostRender += OnPostRender;
+        }
+
+        private void OnDisable()
+        {
+            Camera.onPostRender -= OnPostRender;
+        }
+
         /// <summary>
         /// Also updates turret head rotation to look towards to target
         /// </summary>
@@ -54,6 +64,47 @@ namespace Freya.Part_II.Assignment_I.Scripts
             }
 
             return inside;
+        }
+
+        // This part talked somewhere in trigonometry lecture (5th of the series)
+        // What would you do if you want to draw the wedge shape in built just rather than on editor
+        // and Freya suggest that one solution to that is using GL commands
+
+        // This event will be called only if this script attached same GameObject that has Camera Component, thus not proper solution for our case
+        private void OnPostRender()
+        {
+            Debug.Log("Should never be printed in current setup");
+        }
+
+        // We want to draw our things exactly here to avoid possible errors that might occur
+        // like if we draw on Update call instead of here
+        // since the Unity's event execution order for camera render run after Update method calls
+        // the screen probably will be cleared before Draw function call thus cause to lose our drawings
+        private void OnPostRender(Camera camera)
+        {
+            // Want to be sure just catching targeted camera
+            if (camera == Camera.current)
+            {
+                GL.PushMatrix();
+                GL.MultMatrix(m_Turret.localToWorldMatrix);
+                GL.Begin(GL.LINES);
+
+                // This is placeholder not actually drawing wedge shape
+                for (int i = 0; i < 5; ++i)
+                {
+                    float a = i / (float)5;
+                    float angleInRadians = a * Mathf.PI * 2.0f;
+                    // Vertex colors change from red to green
+                    GL.Color(new Color(a, 1.0f - a, 0.0f, 0.8f));
+                    // One vertex at transform position
+                    GL.Vertex3(0, 0, 0);
+                    // Another vertex at edge of circle
+                    GL.Vertex3(Mathf.Cos(angleInRadians), Mathf.Sin(angleInRadians), 0.0f);
+                }
+
+                GL.End();
+                GL.PopMatrix();
+            }
         }
 
         private void OnDrawGizmos()
