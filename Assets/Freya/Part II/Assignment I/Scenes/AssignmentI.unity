@@ -380,8 +380,9 @@ MonoBehaviour:
   m_Turret: {fileID: 1578581765}
   m_TurretHead: {fileID: 1578581766}
   m_Target: {fileID: 1092541180}
-  m_DetectionRadius: 3.39
-  m_DetectionAngleInDegrees: 18.2
+  m_DetectionMinRadius: 0.62
+  m_DetectionMaxRadius: 2.98
+  m_DetectionAngleInDegrees: 37.6
   m_DetectionHeight: 0.6
 --- !u!1 &545150972
 GameObject:
