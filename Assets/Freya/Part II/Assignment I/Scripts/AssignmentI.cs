@@ -1,3 +1,4 @@
+using System;
 using UnityEditor;
 using UnityEngine;
 
@@ -10,6 +11,7 @@ namespace Freya.Part_II.Assignment_I.Scripts
     {
         [SerializeField] private Transform m_TurretPlayerLookDirectionRepresent, m_Turret, m_TurretHead;
         [SerializeField] private Transform m_Target;
+        [SerializeField] private TriggerShapes m_TriggerShape;
         [SerializeField] private float m_DetectionMinRadius, m_DetectionMaxRadius, m_DetectionAngleInDegrees, m_DetectionHeight;
 
         private void OnValidate()
@@ -41,21 +43,51 @@ namespace Freya.Part_II.Assignment_I.Scripts
         /// </summary>
         private bool IsTargetInsideTurretRange(Matrix4x4 turretWorldSpace)
         {
+            bool inside = false;
+
             Vector3 relativeToTarget = turretWorldSpace.MultiplyPoint3x4(m_Target.position);
 
-            // The y-value should be out of consideration since the generated volume it's kinda cheese wedge (cylindrical)
-            float distanceSqrToTarget = new Vector2(relativeToTarget.x, relativeToTarget.z).sqrMagnitude;
-            bool insideRadius = m_DetectionMinRadius * m_DetectionMinRadius <= distanceSqrToTarget && distanceSqrToTarget <= m_DetectionMaxRadius * m_DetectionMaxRadius;
+            switch (m_TriggerShape)
+            {
+                case TriggerShapes.CylindricalSector:
+                {
+                    // The y-value should be out of consideration since the generated volume it's kinda cheese wedge (cylindrical)
+                    float distanceSqrToTarget = new Vector2(relativeToTarget.x, relativeToTarget.z).sqrMagnitude;
+                    bool insideRadius = m_DetectionMinRadius * m_DetectionMinRadius <= distanceSqrToTarget && distanceSqrToTarget <= m_DetectionMaxRadius * m_DetectionMaxRadius;
 
-            // This 'Mathf.Acos()' function always returns angle(in radians) between [0, PI]
-            float angleInDegrees = Mathf.Acos(Vector2.Dot(Vector2.up, new Vector2(relativeToTarget.x, relativeToTarget.z).normalized)) * Mathf.Rad2Deg;
-            bool insideAngle = angleInDegrees <= m_DetectionAngleInDegrees * 0.5f;
-            // bool insideAngle = -m_DetectionAngleInDegrees * 0.5f <= Mathf.Atan2(relativeToTarget.z, relativeToTarget.x) * Mathf.Rad2Deg - 90.0f && Mathf.Atan2(relativeToTarget.z, relativeToTarget.x) * Mathf.Rad2Deg - 90.0f <= +m_DetectionAngleInDegrees * 0.5f;
+                    // This 'Mathf.Acos()' function always returns angle(in radians) between [0, PI]
+                    float angleInDegrees = Mathf.Acos(Vector2.Dot(Vector2.up, new Vector2(relativeToTarget.x, relativeToTarget.z).normalized)) * Mathf.Rad2Deg;
+                    bool insideAngle = angleInDegrees <= m_DetectionAngleInDegrees * 0.5f;
+                    // bool insideAngle = -m_DetectionAngleInDegrees * 0.5f <= Mathf.Atan2(relativeToTarget.z, relativeToTarget.x) * Mathf.Rad2Deg - 90.0f && Mathf.Atan2(relativeToTarget.z, relativeToTarget.x) * Mathf.Rad2Deg - 90.0f <= +m_DetectionAngleInDegrees * 0.5f;
 
-            // Is height(relativeTarget.y) within [0.0f, m_DetectionHeight]
-            bool insideHeight = 0.0f <= relativeToTarget.y && relativeToTarget.y <= m_DetectionHeight;
+                    // Is height(relativeTarget.y) within [0.0f, m_DetectionHeight]
+                    bool insideHeight = 0.0f <= relativeToTarget.y && relativeToTarget.y <= m_DetectionHeight;
 
-            bool inside = insideRadius && insideAngle && insideHeight;
+                    inside = insideRadius && insideAngle && insideHeight;
+                    break;
+                }
+                case TriggerShapes.Spherical:
+                {
+                    float distanceSqrToTarget = relativeToTarget.sqrMagnitude;
+                    inside = m_DetectionMinRadius * m_DetectionMinRadius <= distanceSqrToTarget && distanceSqrToTarget <= m_DetectionMaxRadius * m_DetectionMaxRadius;
+                    break;
+                }
+                case TriggerShapes.SphericalSector:
+                {
+                    float distanceSqrToTarget = relativeToTarget.sqrMagnitude;
+                    bool insideRadius = m_DetectionMinRadius * m_DetectionMinRadius <= distanceSqrToTarget && distanceSqrToTarget <= m_DetectionMaxRadius * m_DetectionMaxRadius;
+
+                    // This 'Mathf.Acos()' function always returns angle(in radians) between [0, PI]
+                    float angleInDegrees = Mathf.Acos(Vector3.Dot(Vector3.forward, relativeToTarget.normalized)) * Mathf.Rad2Deg;
+                    bool insideAngle = angleInDegrees <= m_DetectionAngleInDegrees * 0.5f;
+
+                    inside = insideRadius && insideAngle;
+                    break;
+                }
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
             if (inside)
             {
                 const float smooth_factor = 5.0f;
@@ -145,29 +177,8 @@ namespace Freya.Part_II.Assignment_I.Scripts
                 // zAxis => new Vector4(zAxis, 0.0f)
                 Matrix4x4 turretLocalSpace = new Matrix4x4(xAxis, yAxis, zAxis, new Vector4(point.x, point.y, point.z, 1.0f));
 
-                // Calculate detection volume(cheese wedge) vertices' world points 
-                Vector3 worldInnerArcBottomLeftPoint = turretLocalSpace.MultiplyPoint3x4(Quaternion.AngleAxis(-m_DetectionAngleInDegrees * 0.5f, Vector3.up) * (Vector3.forward * m_DetectionMinRadius));
-                // Vector3 worldInnerArcBottomMidPoint = turretLocalSpace.MultiplyPoint3x4(Vector3.forward * m_DetectionMinRadius);
-                Vector3 localInnerArcBottomRightPoint = Quaternion.AngleAxis(+m_DetectionAngleInDegrees * 0.5f, Vector3.up) * (Vector3.forward * m_DetectionMinRadius);
-                Vector3 worldInnerArcBottomRightPoint = turretLocalSpace * new Vector4(localInnerArcBottomRightPoint.x, localInnerArcBottomRightPoint.y, localInnerArcBottomRightPoint.z, 1.0f);
-                // Vector3 worldInnerArcBottomRightPoint = (Vector3)(turretLocalSpace * localInnerArcBottomRightPoint) + point;
-
-                Vector3 worldInnerArcTopLeftPoint = turretLocalSpace.MultiplyPoint3x4(Quaternion.AngleAxis(-m_DetectionAngleInDegrees * 0.5f, Vector3.up) * (Vector3.forward * m_DetectionMinRadius) + Vector3.up * m_DetectionHeight);
-                // Vector3 worldInnerArcTopMidPoint = turretLocalSpace.MultiplyPoint3x4(Vector3.forward * m_DetectionMinRadius + Vector3.up * m_DetectionHeight);
-                Vector3 worldInnerArcTopRightPoint = turretLocalSpace.MultiplyPoint3x4(Quaternion.AngleAxis(+m_DetectionAngleInDegrees * 0.5f, Vector3.up) * (Vector3.forward * m_DetectionMinRadius) + Vector3.up * m_DetectionHeight);
-
-                Vector3 worldOuterArcBottomLeftPoint = turretLocalSpace.MultiplyPoint3x4(Quaternion.AngleAxis(-m_DetectionAngleInDegrees * 0.5f, Vector3.up) * (Vector3.forward * m_DetectionMaxRadius));
-                // Vector3 worldOuterArcBottomMidPoint = turretLocalSpace.MultiplyPoint3x4(Vector3.forward * m_DetectionMaxRadius);
-                Vector3 localOuterArcBottomRightPoint = Quaternion.AngleAxis(+m_DetectionAngleInDegrees * 0.5f, Vector3.up) * (Vector3.forward * m_DetectionMaxRadius);
-                Vector3 worldOuterArcBottomRightPoint = turretLocalSpace * new Vector4(localOuterArcBottomRightPoint.x, localOuterArcBottomRightPoint.y, localOuterArcBottomRightPoint.z, 1.0f);
-                // Vector3 worldOuterArcBottomRightPoint = (Vector3)(turretLocalSpace * localOuterArcBottomRightPoint) + point;
-
-                Vector3 worldOuterArcTopLeftPoint = turretLocalSpace.MultiplyPoint3x4(Quaternion.AngleAxis(-m_DetectionAngleInDegrees * 0.5f, Vector3.up) * (Vector3.forward * m_DetectionMaxRadius) + Vector3.up * m_DetectionHeight);
-                // Vector3 worldOuterArcTopMidPoint = turretLocalSpace.MultiplyPoint3x4(Vector3.forward * m_DetectionMaxRadius + Vector3.up * m_DetectionHeight);
-                Vector3 worldOuterArcTopRightPoint = turretLocalSpace.MultiplyPoint3x4(Quaternion.AngleAxis(+m_DetectionAngleInDegrees * 0.5f, Vector3.up) * (Vector3.forward * m_DetectionMaxRadius) + Vector3.up * m_DetectionHeight);
-
                 bool inside = IsTargetInsideTurretRange(turretLocalSpace.inverse);
-                Handles.color = inside ? Color.red : Color.yellow;
+                Gizmos.color = Handles.color = inside ? Color.red : Color.yellow;
 
                 if (inside)
                 {
@@ -175,35 +186,136 @@ namespace Freya.Part_II.Assignment_I.Scripts
                     Gizmos.DrawLine(m_TurretHead.position, m_Target.position);
                 }
 
-                // Draw wedge edges
-                Handles.DrawLine(worldInnerArcBottomLeftPoint, worldOuterArcBottomLeftPoint);
-                Handles.DrawLine(worldInnerArcBottomRightPoint, worldOuterArcBottomRightPoint);
-                Handles.DrawLine(worldInnerArcTopLeftPoint, worldOuterArcTopLeftPoint);
-                Handles.DrawLine(worldInnerArcTopRightPoint, worldOuterArcTopRightPoint);
+                switch (m_TriggerShape)
+                {
+                    case TriggerShapes.CylindricalSector:
+                    {
+                        // Calculate detection volume(cheese wedge) vertices' world points
+                        Vector3 worldInnerArcBottomLeftPoint = turretLocalSpace.MultiplyPoint3x4(Quaternion.AngleAxis(-m_DetectionAngleInDegrees * 0.5f, Vector3.up) * (Vector3.forward * m_DetectionMinRadius));
+                        // Vector3 worldInnerArcBottomMidPoint = turretLocalSpace.MultiplyPoint3x4(Vector3.forward * m_DetectionMinRadius);
+                        Vector3 localInnerArcBottomRightPoint = Quaternion.AngleAxis(+m_DetectionAngleInDegrees * 0.5f, Vector3.up) * (Vector3.forward * m_DetectionMinRadius);
+                        Vector3 worldInnerArcBottomRightPoint = turretLocalSpace * new Vector4(localInnerArcBottomRightPoint.x, localInnerArcBottomRightPoint.y, localInnerArcBottomRightPoint.z, 1.0f);
+                        // Vector3 worldInnerArcBottomRightPoint = (Vector3)(turretLocalSpace * localInnerArcBottomRightPoint) + point;
 
-                // Draw wire arc for inner radius
-                Handles.DrawWireArc(point, yAxis, Quaternion.AngleAxis(-m_DetectionAngleInDegrees * 0.5f, yAxis) * zAxis, m_DetectionAngleInDegrees, m_DetectionMinRadius);
-                Handles.DrawWireArc(point + yAxis * m_DetectionHeight, yAxis, Quaternion.AngleAxis(-m_DetectionAngleInDegrees * 0.5f, yAxis) * zAxis, m_DetectionAngleInDegrees, m_DetectionMinRadius);
+                        Vector3 worldInnerArcTopLeftPoint = turretLocalSpace.MultiplyPoint3x4(Quaternion.AngleAxis(-m_DetectionAngleInDegrees * 0.5f, Vector3.up) * (Vector3.forward * m_DetectionMinRadius) + Vector3.up * m_DetectionHeight);
+                        // Vector3 worldInnerArcTopMidPoint = turretLocalSpace.MultiplyPoint3x4(Vector3.forward * m_DetectionMinRadius + Vector3.up * m_DetectionHeight);
+                        Vector3 worldInnerArcTopRightPoint = turretLocalSpace.MultiplyPoint3x4(Quaternion.AngleAxis(+m_DetectionAngleInDegrees * 0.5f, Vector3.up) * (Vector3.forward * m_DetectionMinRadius) + Vector3.up * m_DetectionHeight);
 
-                // Draw wire arc edges for inner radius
-                Handles.DrawLine(worldInnerArcBottomLeftPoint, worldInnerArcTopLeftPoint);
-                // Handles.DrawLine(worldInnerArcBottomMidPoint, worldInnerArcTopMidPoint);
-                Handles.DrawLine(worldInnerArcBottomRightPoint, worldInnerArcTopRightPoint);
+                        Vector3 worldOuterArcBottomLeftPoint = turretLocalSpace.MultiplyPoint3x4(Quaternion.AngleAxis(-m_DetectionAngleInDegrees * 0.5f, Vector3.up) * (Vector3.forward * m_DetectionMaxRadius));
+                        // Vector3 worldOuterArcBottomMidPoint = turretLocalSpace.MultiplyPoint3x4(Vector3.forward * m_DetectionMaxRadius);
+                        Vector3 localOuterArcBottomRightPoint = Quaternion.AngleAxis(+m_DetectionAngleInDegrees * 0.5f, Vector3.up) * (Vector3.forward * m_DetectionMaxRadius);
+                        Vector3 worldOuterArcBottomRightPoint = turretLocalSpace * new Vector4(localOuterArcBottomRightPoint.x, localOuterArcBottomRightPoint.y, localOuterArcBottomRightPoint.z, 1.0f);
+                        // Vector3 worldOuterArcBottomRightPoint = (Vector3)(turretLocalSpace * localOuterArcBottomRightPoint) + point;
 
-                // Draw wire arc for outer radius
-                Handles.DrawWireArc(point, yAxis, Quaternion.AngleAxis(-m_DetectionAngleInDegrees * 0.5f, yAxis) * zAxis, m_DetectionAngleInDegrees, m_DetectionMaxRadius);
-                Handles.DrawWireArc(point + yAxis * m_DetectionHeight, yAxis, Quaternion.AngleAxis(-m_DetectionAngleInDegrees * 0.5f, yAxis) * zAxis, m_DetectionAngleInDegrees, m_DetectionMaxRadius);
+                        Vector3 worldOuterArcTopLeftPoint = turretLocalSpace.MultiplyPoint3x4(Quaternion.AngleAxis(-m_DetectionAngleInDegrees * 0.5f, Vector3.up) * (Vector3.forward * m_DetectionMaxRadius) + Vector3.up * m_DetectionHeight);
+                        // Vector3 worldOuterArcTopMidPoint = turretLocalSpace.MultiplyPoint3x4(Vector3.forward * m_DetectionMaxRadius + Vector3.up * m_DetectionHeight);
+                        Vector3 worldOuterArcTopRightPoint = turretLocalSpace.MultiplyPoint3x4(Quaternion.AngleAxis(+m_DetectionAngleInDegrees * 0.5f, Vector3.up) * (Vector3.forward * m_DetectionMaxRadius) + Vector3.up * m_DetectionHeight);
 
-                // Draw wire arc edges for outer radius
-                Handles.DrawLine(worldOuterArcBottomLeftPoint, worldOuterArcTopLeftPoint);
-                // Handles.DrawLine(worldOuterArcBottomMidPoint, worldOuterArcTopMidPoint);
-                Handles.DrawLine(worldOuterArcBottomRightPoint, worldOuterArcTopRightPoint);
+                        // Draw wedge edges
+                        Handles.DrawLine(worldInnerArcBottomLeftPoint, worldOuterArcBottomLeftPoint);
+                        Handles.DrawLine(worldInnerArcBottomRightPoint, worldOuterArcBottomRightPoint);
+                        Handles.DrawLine(worldInnerArcTopLeftPoint, worldOuterArcTopLeftPoint);
+                        Handles.DrawLine(worldInnerArcTopRightPoint, worldOuterArcTopRightPoint);
+
+                        // Draw wire arc for inner radius
+                        Handles.DrawWireArc(point, yAxis, Quaternion.AngleAxis(-m_DetectionAngleInDegrees * 0.5f, yAxis) * zAxis, m_DetectionAngleInDegrees, m_DetectionMinRadius);
+                        Handles.DrawWireArc(point + yAxis * m_DetectionHeight, yAxis, Quaternion.AngleAxis(-m_DetectionAngleInDegrees * 0.5f, yAxis) * zAxis, m_DetectionAngleInDegrees, m_DetectionMinRadius);
+
+                        // Draw wire arc edges for inner radius
+                        Handles.DrawLine(worldInnerArcBottomLeftPoint, worldInnerArcTopLeftPoint);
+                        // Handles.DrawLine(worldInnerArcBottomMidPoint, worldInnerArcTopMidPoint);
+                        Handles.DrawLine(worldInnerArcBottomRightPoint, worldInnerArcTopRightPoint);
+
+                        // Draw wire arc for outer radius
+                        Handles.DrawWireArc(point, yAxis, Quaternion.AngleAxis(-m_DetectionAngleInDegrees * 0.5f, yAxis) * zAxis, m_DetectionAngleInDegrees, m_DetectionMaxRadius);
+                        Handles.DrawWireArc(point + yAxis * m_DetectionHeight, yAxis, Quaternion.AngleAxis(-m_DetectionAngleInDegrees * 0.5f, yAxis) * zAxis, m_DetectionAngleInDegrees, m_DetectionMaxRadius);
+
+                        // Draw wire arc edges for outer radius
+                        Handles.DrawLine(worldOuterArcBottomLeftPoint, worldOuterArcTopLeftPoint);
+                        // Handles.DrawLine(worldOuterArcBottomMidPoint, worldOuterArcTopMidPoint);
+                        Handles.DrawLine(worldOuterArcBottomRightPoint, worldOuterArcTopRightPoint);
+
+                        break;
+                    }
+                    case TriggerShapes.Spherical:
+                    {
+                        Gizmos.DrawWireSphere(point, m_DetectionMinRadius);
+                        Gizmos.DrawWireSphere(point, m_DetectionMaxRadius);
+
+                        break;
+                    }
+                    case TriggerShapes.SphericalSector:
+                    {
+                        const int segment_count = 16;
+
+                        // Bottom cap
+                        Handles.DrawWireArc
+                        (
+                            point,
+                            zAxis,
+                            Quaternion.AngleAxis(-m_DetectionAngleInDegrees * 0.5f, yAxis) * zAxis,
+                            360.0f,
+                            m_DetectionMinRadius
+                        );
+
+                        // Top cap
+                        Handles.DrawWireArc
+                        (
+                            point,
+                            zAxis,
+                            Quaternion.AngleAxis(-m_DetectionAngleInDegrees * 0.5f, yAxis) * zAxis,
+                            360.0f,
+                            m_DetectionMaxRadius
+                        );
+
+                        for (int i = 0; i < segment_count; i++)
+                        {
+                            float angleInDegrees = (i / (float)segment_count) * 180.0f;
+                            Vector3 normal = Quaternion.AngleAxis(angleInDegrees, zAxis) * yAxis;
+
+                            Vector3 from = Quaternion.AngleAxis(-m_DetectionAngleInDegrees * 0.5f, normal) * zAxis;
+                            Vector3 end = Quaternion.AngleAxis(+m_DetectionAngleInDegrees * 0.5f, normal) * zAxis;
+
+                            Handles.DrawWireArc
+                            (
+                                point,
+                                normal,
+                                from,
+                                m_DetectionAngleInDegrees,
+                                m_DetectionMinRadius
+                            );
+
+                            Handles.DrawWireArc
+                            (
+                                point,
+                                normal,
+                                from,
+                                m_DetectionAngleInDegrees,
+                                m_DetectionMaxRadius
+                            );
+
+                            Handles.DrawLine(point + (from * m_DetectionMinRadius), point + (from * m_DetectionMaxRadius));
+                            Handles.DrawLine(point + (end * m_DetectionMinRadius), point + (end * m_DetectionMaxRadius));
+                        }
+
+                        break;
+                    }
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
             }
             else
             {
                 Gizmos.color = Color.white;
                 Gizmos.DrawLine(ray.origin, ray.origin + ray.direction * 50.0f);
             }
+        }
+
+        private enum TriggerShapes : byte
+        {
+            CylindricalSector,
+            Spherical,
+            SphericalSector
         }
     }
 }

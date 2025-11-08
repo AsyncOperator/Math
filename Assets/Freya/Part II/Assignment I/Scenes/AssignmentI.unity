@@ -380,9 +380,10 @@ MonoBehaviour:
   m_Turret: {fileID: 1578581765}
   m_TurretHead: {fileID: 1578581766}
   m_Target: {fileID: 1092541180}
-  m_DetectionMinRadius: 0.62
-  m_DetectionMaxRadius: 2.98
-  m_DetectionAngleInDegrees: 37.6
+  m_TriggerShape: 2
+  m_DetectionMinRadius: 1
+  m_DetectionMaxRadius: 2.42
+  m_DetectionAngleInDegrees: 32
   m_DetectionHeight: 0.6
 --- !u!1 &545150972
 GameObject:
@@ -545,7 +546,7 @@ Transform:
   m_GameObject: {fileID: 1092541179}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -2.394, y: 0.604, z: 2.922}
+  m_LocalPosition: {x: -2.963, y: 0.328, z: 3.451}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -644,19 +645,19 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 651807443602015405, guid: 9725c569ee4c52645a9553174816ccfc, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.98489517
+      value: 0.970382
       objectReference: {fileID: 0}
     - target: {fileID: 651807443602015405, guid: 9725c569ee4c52645a9553174816ccfc, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.1232529
+      value: 0.047773406
       objectReference: {fileID: 0}
     - target: {fileID: 651807443602015405, guid: 9725c569ee4c52645a9553174816ccfc, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0.015501336
+      value: 0.113457724
       objectReference: {fileID: 0}
     - target: {fileID: 651807443602015405, guid: 9725c569ee4c52645a9553174816ccfc, type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0.120623395
+      value: -0.20785543
       objectReference: {fileID: 0}
     - target: {fileID: 1829750555053737151, guid: 9725c569ee4c52645a9553174816ccfc, type: 3}
       propertyPath: m_LocalPosition.x
