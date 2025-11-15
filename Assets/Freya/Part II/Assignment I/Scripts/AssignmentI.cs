@@ -38,6 +38,26 @@ namespace Freya.Part_II.Assignment_I.Scripts
             Camera.onPostRender -= OnPostRender;
         }
 
+        private void Update()
+        {
+            Vector3 mousePosition = Input.mousePosition;
+            Ray ray = Camera.main.ScreenPointToRay(mousePosition);
+
+            if (Physics.Raycast(ray, out RaycastHit hitInfo))
+            {
+                Vector3 point = hitInfo.point;
+
+                Vector3 yAxis = hitInfo.normal;
+                Vector3 xAxis = Vector3.Cross(yAxis, ray.direction).normalized;
+                Vector3 zAxis = Vector3.Cross(xAxis, yAxis); // Since the xAxis and yAxis are orthonormal(perpendicular and normalized) to each other we are sure that zAxis is already normalized
+
+                m_Turret.SetPositionAndRotation(point, Quaternion.LookRotation(zAxis, yAxis));
+
+                Matrix4x4 turretLocalSpace = new Matrix4x4(xAxis, yAxis, zAxis, new Vector4(point.x, point.y, point.z, 1.0f));
+                IsTargetInsideTurretRange(turretLocalSpace.inverse);
+            }
+        }
+
         /// <summary>
         /// Also updates turret head rotation to look towards to target
         /// </summary>
@@ -120,26 +140,29 @@ namespace Freya.Part_II.Assignment_I.Scripts
         // like if we draw on Update call instead of here
         // since the Unity's event execution order for camera render run after Update method calls
         // the screen probably will be cleared before Draw function call thus cause to lose our drawings
-        private void OnPostRender(Camera camera)
+        private void OnPostRender(Camera c)
         {
             // Want to be sure just catching targeted camera
-            if (camera == Camera.current)
+            if (c == Camera.main)
             {
                 GL.PushMatrix();
                 GL.MultMatrix(m_Turret.localToWorldMatrix);
                 GL.Begin(GL.LINES);
 
+                const int iter = 5;
+
                 // This is placeholder not actually drawing wedge shape
-                for (int i = 0; i < 5; ++i)
+                for (int i = 0; i <= iter; ++i)
                 {
-                    float a = i / (float)5;
-                    float angleInRadians = a * Mathf.PI * 2.0f;
-                    // Vertex colors change from red to green
-                    GL.Color(new Color(a, 1.0f - a, 0.0f, 0.8f));
+                    float a = i / (float)iter;
+                    float angleInHalfTurn = a * Mathf.PI;
+                    // TODO(hakan): Color is not applied to lines, check documentation to learn how to apply it
+                    // probably we have to set appropriate material for drawing
+                    GL.Color(new Color(1.0f - a, 0.0f, 0.0f, 0.8f));
                     // One vertex at transform position
                     GL.Vertex3(0, 0, 0);
                     // Another vertex at edge of circle
-                    GL.Vertex3(Mathf.Cos(angleInRadians), Mathf.Sin(angleInRadians), 0.0f);
+                    GL.Vertex3(Mathf.Cos(angleInHalfTurn), Mathf.Sin(angleInHalfTurn), 0.0f);
                 }
 
                 GL.End();
@@ -149,6 +172,9 @@ namespace Freya.Part_II.Assignment_I.Scripts
 
         private void OnDrawGizmos()
         {
+            // Turret placement handled at Update event function
+            if (Application.isPlaying) return;
+
             Ray ray = new Ray(m_TurretPlayerLookDirectionRepresent.position, m_TurretPlayerLookDirectionRepresent.forward);
             if (Physics.Raycast(ray, out RaycastHit hitInfo))
             {
