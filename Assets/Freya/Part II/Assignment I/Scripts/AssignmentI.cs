@@ -11,8 +11,22 @@ namespace Freya.Part_II.Assignment_I.Scripts
     {
         [SerializeField] private Transform m_TurretPlayerLookDirectionRepresent, m_Turret, m_TurretHead;
         [SerializeField] private Transform m_Target;
+        [SerializeField] private MeshRenderer m_TurretHeadMeshRenderer;
         [SerializeField] private TriggerShapes m_TriggerShape;
         [SerializeField] private float m_DetectionMinRadius, m_DetectionMaxRadius, m_DetectionAngleInDegrees, m_DetectionHeight;
+
+        [Header("Assignment 11")]
+        [SerializeField] private float m_TurretYawModifierAngleInDegrees;
+
+        private Matrix4x4 m_LastCachedTurretMatrix = Matrix4x4.zero;
+        private int m_YawModifierCounter;
+
+        private MaterialPropertyBlock MaterialPropertyBlock
+        {
+            get { return m_MaterialPropertyBlock ??= new MaterialPropertyBlock(); }
+        }
+
+        private MaterialPropertyBlock m_MaterialPropertyBlock;
 
         private void OnValidate()
         {
@@ -51,9 +65,31 @@ namespace Freya.Part_II.Assignment_I.Scripts
                 Vector3 xAxis = Vector3.Cross(yAxis, ray.direction).normalized;
                 Vector3 zAxis = Vector3.Cross(xAxis, yAxis); // Since the xAxis and yAxis are orthonormal(perpendicular and normalized) to each other we are sure that zAxis is already normalized
 
+                Matrix4x4 turretLocalSpace = new Matrix4x4(xAxis, yAxis, zAxis, new Vector4(point.x, point.y, point.z, 1.0f));
+
+                if (m_LastCachedTurretMatrix != turretLocalSpace)
+                {
+                    m_LastCachedTurretMatrix = turretLocalSpace;
+                    m_YawModifierCounter = 0;
+                }
+
+                // Process mouse scroll event
+                if (Input.mouseScrollDelta.y != 0.0f)
+                {
+                    int direction = Input.mouseScrollDelta.y > 0.0f ? +1 : -1;
+                    // Increment or decrement by one depending on scroll direction
+                    m_YawModifierCounter += direction;
+                }
+
+                // Update (x and z) basis vectors on applied yaw angle
+                xAxis = Quaternion.AngleAxis(m_TurretYawModifierAngleInDegrees * m_YawModifierCounter, yAxis) * xAxis;
+                zAxis = Quaternion.AngleAxis(m_TurretYawModifierAngleInDegrees * m_YawModifierCounter, yAxis) * zAxis;
+
+                turretLocalSpace.SetColumn(0, xAxis);
+                turretLocalSpace.SetColumn(2, zAxis);
+
                 m_Turret.SetPositionAndRotation(point, Quaternion.LookRotation(zAxis, yAxis));
 
-                Matrix4x4 turretLocalSpace = new Matrix4x4(xAxis, yAxis, zAxis, new Vector4(point.x, point.y, point.z, 1.0f));
                 IsTargetInsideTurretRange(turretLocalSpace.inverse);
             }
         }
@@ -115,6 +151,7 @@ namespace Freya.Part_II.Assignment_I.Scripts
                 Vector3 localSpaceVectorRelativeToHead = relativeToTarget - turretWorldSpace.MultiplyPoint3x4(m_TurretHead.position);
                 Quaternion fromLocalRotation = m_TurretHead.localRotation;
                 // turretWorldSpace.GetColumn(1) => m_Turret.up
+                // TODO(hakan): This line is incorrect i guess
                 Quaternion toLocalRotation = Quaternion.LookRotation(localSpaceVectorRelativeToHead, turretWorldSpace.GetColumn(1));
 
                 // If application is playing then smoothly rotate it otherwise snap it
@@ -122,6 +159,9 @@ namespace Freya.Part_II.Assignment_I.Scripts
                     ? Quaternion.Slerp(fromLocalRotation, toLocalRotation, smooth_factor * Time.deltaTime)
                     : toLocalRotation;
             }
+
+            MaterialPropertyBlock.SetColor("_Color", inside ? Color.red : Color.yellow);
+            m_TurretHeadMeshRenderer.SetPropertyBlock(MaterialPropertyBlock);
 
             return inside;
         }
