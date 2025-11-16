@@ -10,7 +10,7 @@ namespace Freya.Part_II.Scripts
         [SerializeField] private Transform m_Transform;
         [SerializeField] private Transform m_PlayerShip, m_EnemyShip;
 
-        [SerializeField] private MatrixMonitorUI m_MatrixMonitorUI;
+        [SerializeField] private MatrixMonitorUI m_LocalToWorldMatrixMonitorUI, m_WorldToLocalMatrixMonitorUI;
         [SerializeField] private Vector3 m_LocalSpaceCoords;
 
         [SerializeField] private Transform m_TurretPlayerLookDirectionRepresent, m_Turret;
@@ -18,17 +18,41 @@ namespace Freya.Part_II.Scripts
 
         [SerializeField] private Transform m_CrossA, m_CrossB;
 
-        private Matrix4x4 LocalToWorldMatrix => m_Transform.localToWorldMatrix;
-
         private void Start()
         {
-            UpdateMonitorView();
+            UpdateMonitorViews();
         }
 
-        [ContextMenu("Update matrix monitor view")]
-        private void UpdateMonitorView()
+        private void Update()
         {
-            m_MatrixMonitorUI.UpdateView(LocalToWorldMatrix);
+            UpdateMonitorViews();
+        }
+
+        [ContextMenu("Update matrix monitor views")]
+        private void UpdateMonitorViews()
+        {
+            m_LocalToWorldMatrixMonitorUI.UpdateView(m_Transform.localToWorldMatrix);
+            m_WorldToLocalMatrixMonitorUI.UpdateView(m_Transform.worldToLocalMatrix);
+        }
+
+        [ContextMenu("Run test")]
+        private void Test()
+        {
+            Vector3 v = new Vector3(1.0f, 2.0f, 3.0f);
+            {
+                Matrix4x4 m = m_Transform.localToWorldMatrix;
+                Vector3 vResult1 = m.MultiplyPoint3x4(v);
+                Vector3 vResult2 = m_Transform.TransformPoint(v);
+                Debug.Log($"Local to world: {nameof(vResult1)} -> " + vResult1);
+                Debug.Log($"Local to world: {nameof(vResult2)} -> " + vResult2);
+            }
+            {
+                Matrix4x4 m = m_Transform.worldToLocalMatrix;
+                Vector3 vResult1 = m.MultiplyPoint3x4(v);
+                Vector3 vResult2 = m_Transform.InverseTransformPoint(v);
+                Debug.Log($"World to local: {nameof(vResult1)} -> " + vResult1);
+                Debug.Log($"World to local: {nameof(vResult2)} -> " + vResult2);
+            }
         }
 
         private void OnDrawGizmos()
