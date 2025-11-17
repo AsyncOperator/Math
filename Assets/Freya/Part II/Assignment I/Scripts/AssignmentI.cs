@@ -149,10 +149,11 @@ namespace Freya.Part_II.Assignment_I.Scripts
                 const float smooth_factor = 5.0f;
 
                 Vector3 localSpaceVectorRelativeToHead = relativeToTarget - turretWorldSpace.MultiplyPoint3x4(m_TurretHead.position);
+
+                Vector3 dir = localSpaceVectorRelativeToHead.normalized;
+                Vector3 up = turretWorldSpace.inverse.GetColumn(1);
                 Quaternion fromLocalRotation = m_TurretHead.localRotation;
-                // turretWorldSpace.GetColumn(1) => m_Turret.up
-                // TODO(hakan): This line is incorrect i guess
-                Quaternion toLocalRotation = Quaternion.LookRotation(localSpaceVectorRelativeToHead, turretWorldSpace.GetColumn(1));
+                Quaternion toLocalRotation = Quaternion.LookRotation(dir, up);
 
                 // If application is playing then smoothly rotate it otherwise snap it
                 m_TurretHead.localRotation = Application.isPlaying
