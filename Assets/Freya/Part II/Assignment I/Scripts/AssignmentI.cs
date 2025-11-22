@@ -21,6 +21,8 @@ namespace Freya.Part_II.Assignment_I.Scripts
         private Matrix4x4 m_LastCachedTurretMatrix = Matrix4x4.zero;
         private int m_YawModifierCounter;
 
+        private float m_Pitch, m_Yaw;
+
         private MaterialPropertyBlock MaterialPropertyBlock
         {
             get { return m_MaterialPropertyBlock ??= new MaterialPropertyBlock(); }
@@ -42,6 +44,12 @@ namespace Freya.Part_II.Assignment_I.Scripts
             m_DetectionHeight = Mathf.Max(m_DetectionHeight, 0.5f);
         }
 
+        private void Awake()
+        {
+            Cursor.visible = false;
+            Cursor.lockState = CursorLockMode.Locked;
+        }
+
         private void OnEnable()
         {
             Camera.onPostRender += OnPostRender;
@@ -54,6 +62,16 @@ namespace Freya.Part_II.Assignment_I.Scripts
 
         private void Update()
         {
+            // Update camera look direction
+            float xDelta = Input.GetAxis("Mouse X");
+            float yDelta = Input.GetAxis("Mouse Y");
+
+            m_Yaw += xDelta;
+            m_Pitch += -yDelta;
+            m_Pitch = Mathf.Clamp(m_Pitch, -75.0f, 75.0f);
+
+            Camera.main.transform.rotation = Quaternion.Euler(m_Pitch, m_Yaw, 0.0f);
+
             Vector3 mousePosition = Input.mousePosition;
             Ray ray = Camera.main.ScreenPointToRay(mousePosition);
 
