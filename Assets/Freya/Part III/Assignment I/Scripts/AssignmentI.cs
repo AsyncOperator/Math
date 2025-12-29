@@ -12,6 +12,7 @@ namespace Freya.Part_III.Assignment_I.Scripts
         [SerializeField] private ClockStyle m_ClockStyle;
         [SerializeField] private ClockBehaviour m_ClockBehaviour;
 
+#pragma warning disable CS8524 // The switch expression does not handle some values of its input type (it is not exhaustive) involving an unnamed enum value.
         private void OnDrawGizmos()
         {
             DateTime now = DateTime.Now;
@@ -133,6 +134,7 @@ namespace Freya.Part_III.Assignment_I.Scripts
                 Handles.DrawWireDisc(p.normalized * clock_radius, Vector3.back, 0.015f);
             }
         }
+#pragma warning restore CS8524 // The switch expression does not handle some values of its input type (it is not exhaustive) involving an unnamed enum value.
 
         private enum ClockStyle
         {
