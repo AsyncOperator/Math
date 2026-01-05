@@ -9,14 +9,12 @@ namespace Freya.Final_Assignments.Scripts
 
         [Header("Coil spring")]
         [SerializeField] private float m_Radius;
-
         [SerializeField] private float m_Height;
         [SerializeField] private int m_TurnsCount;
         [SerializeField] private Color m_ColorA, m_ColorB;
 
         [Header("Donut spring")]
         [SerializeField] private float m_MajorRadius, m_MinorRadius;
-
         [SerializeField] private int m_SpiralsCount;
 
         private Vector3[] m_Points;
