@@ -43,16 +43,74 @@ namespace Freya.Part_II.Scripts
                 Matrix4x4 m = m_Transform.localToWorldMatrix;
                 Vector3 vResult1 = m.MultiplyPoint3x4(v);
                 Vector3 vResult2 = m_Transform.TransformPoint(v);
-                Debug.Log($"Local to world: {nameof(vResult1)} -> " + vResult1);
-                Debug.Log($"Local to world: {nameof(vResult2)} -> " + vResult2);
+                Debug.Log($"Local to world: {nameof(vResult1)} -> {vResult1}");
+                Debug.Log($"Local to world: {nameof(vResult2)} -> {vResult2}");
             }
             {
                 Matrix4x4 m = m_Transform.worldToLocalMatrix;
                 Vector3 vResult1 = m.MultiplyPoint3x4(v);
                 Vector3 vResult2 = m_Transform.InverseTransformPoint(v);
-                Debug.Log($"World to local: {nameof(vResult1)} -> " + vResult1);
-                Debug.Log($"World to local: {nameof(vResult2)} -> " + vResult2);
+                Debug.Log($"World to local: {nameof(vResult1)} -> {vResult1}");
+                Debug.Log($"World to local: {nameof(vResult2)} -> {vResult2}");
             }
+        }
+
+        [ContextMenu("Run TransformVectorMethod test")]
+        private void TransformVectorMethodTest()
+        {
+            Transform transform0 = new GameObject().transform;
+            transform0.rotation = Quaternion.Euler(0, 90, 0);
+            transform0.localScale = Vector3.one;
+            Matrix4x4 transform0LocalToWorldMatrix = transform0.localToWorldMatrix;
+            Matrix4x4 transform0WorldToLocalMatrix = transform0.worldToLocalMatrix;
+
+            Transform transform1 = new GameObject().transform;
+            transform1.localScale = Vector3.one * 2;
+            Matrix4x4 transform1LocalToWorldMatrix = transform1.localToWorldMatrix;
+            Matrix4x4 transform1WorldToLocalMatrix = transform1.worldToLocalMatrix;
+
+            Vector3 v = Vector3.one;
+            Vector3 transform0TransformInverseResult = transform0.InverseTransformVector(v);
+            Vector3 transform0WorldToLocalInverseResult = transform0WorldToLocalMatrix.MultiplyVector(v);
+            Vector3 transform0TransformResult = transform0.TransformVector(v);
+            Vector3 transform0LocalToWorldResult = transform0LocalToWorldMatrix.MultiplyVector(v);
+
+            Vector3 transform1TransformInverseResult = transform1.InverseTransformVector(v);
+            Vector3 transform1WorldToLocalInverseResult = transform1WorldToLocalMatrix.MultiplyVector(v);
+            Vector3 transform1TransformResult = transform1.TransformVector(v);
+            Vector3 transform1LocalToWorldResult = transform1LocalToWorldMatrix.MultiplyVector(v);
+
+            Debug.Log("Transform0 transform inverse result: " + transform0TransformInverseResult);
+            Debug.Log("Transform0 matrix inverse result: " + transform0WorldToLocalInverseResult);
+            Debug.Log("Transform0 transform result: " + transform0TransformResult);
+            Debug.Log("Transform0 matrix result: " + transform0LocalToWorldResult);
+
+            Debug.Log("############");
+
+            Debug.Log("Transform1 transform inverse result: " + transform1TransformInverseResult);
+            Debug.Log("Transform1 matrix inverse result: " + transform1WorldToLocalInverseResult);
+            Debug.Log("Transform1 transform result: " + transform1TransformResult);
+            Debug.Log("Transform1 matrix result: " + transform1LocalToWorldResult);
+
+            DestroyImmediate(transform0.gameObject);
+            DestroyImmediate(transform1.gameObject);
+        }
+
+        private void CrossProduct()
+        {
+            Vector3 crossANormalized = m_CrossA.position.normalized;
+            Vector3 crossBNormalized = m_CrossB.position.normalized;
+
+            Gizmos.color = Color.red;
+            Gizmos.DrawLine(Vector3.zero, crossANormalized);
+
+            Gizmos.color = Color.green;
+            Gizmos.DrawLine(Vector3.zero, crossBNormalized);
+
+            // Since both input vector are normalized we have guaranteed that the result vector is orthogonal and normalized (unit vector)
+            Vector3 orthonormalAxis = Vector3.Cross(crossANormalized, crossBNormalized);
+            Gizmos.color = Color.blue;
+            Gizmos.DrawLine(Vector3.zero, orthonormalAxis);
         }
 
         private void OnDrawGizmos()
@@ -86,6 +144,7 @@ namespace Freya.Part_II.Scripts
 
             Gizmos.color = Color.white;
             Gizmos.DrawWireSphere(v1, 1.0f); // Draw a unit circle around player ship position
+            Gizmos.DrawWireSphere(m_Transform.position, 0.1f);
 
             Gizmos.color = Color.cyan;
             Gizmos.DrawLine(v1, v2);
@@ -131,14 +190,7 @@ namespace Freya.Part_II.Scripts
                 Gizmos.DrawLine(ray.origin, ray.origin + ray.direction * 50.0f);
             }
 
-            Gizmos.color = Color.red;
-            Gizmos.DrawLine(Vector3.zero, m_CrossA.position.normalized);
-
-            Gizmos.color = Color.green;
-            Gizmos.DrawLine(Vector3.zero, m_CrossB.position.normalized);
-
-            Gizmos.color = Color.blue;
-            Gizmos.DrawLine(Vector3.zero, Vector3.Cross(m_CrossA.position.normalized, m_CrossB.position.normalized));
+            CrossProduct();
         }
     }
 }

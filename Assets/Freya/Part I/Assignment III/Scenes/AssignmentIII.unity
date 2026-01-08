@@ -146,13 +146,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1102713621}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0.4173297, w: -0.9087552}
+  m_LocalRotation: {x: -0, y: -0, z: -0.28989476, w: -0.9570585}
   m_LocalPosition: {x: -0.073, y: 1.077, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 409.332}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 393.703}
 --- !u!1 &1657726198
 GameObject:
   m_ObjectHideFlags: 0
@@ -199,11 +199,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_LocalSpace: {fileID: 1102713622}
   m_LocalSpaceCoords: {x: 0.1, y: 0.08}
-  m_WorldSpaceCoords: {x: -0.39, y: 1.28}
-  m_DrawLocalSpaceToWorldSpace: 0
+  m_WorldSpaceCoords: {x: -0.38, y: 1.28}
+  m_DrawLocalSpaceToWorldSpace: 1
   m_DrawWorldSpaceToLocalSpace: 1
-  m_LocalToWorldPosition: {x: -0.1593671, y: 0.52139956}
-  m_WorldToLocalPosition: {x: -0.052604295, y: 0.37273416}
+  m_LocalToWorldPosition: {x: -0.03419919, y: 1.199043}
+  m_WorldToLocalPosition: {x: -0.14275691, y: 0.33923212}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
